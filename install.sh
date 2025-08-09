@@ -5,6 +5,13 @@ USE_VENV=${USE_VENV:-true}
 
 export HF_HOME="huggingface"
 
+# 安装系统依赖
+echo "Installing system dependencies..."
+sudo apt-get update && \
+sudo apt-get install -y libgl1-mesa-glx && \
+sudo apt-get install -y build-essential && \
+sudo rm -rf /var/lib/apt/lists/*
+
 # 如果启用虚拟环境
 if [ "$USE_VENV" = "true" ]; then
     if [ ! -d "venv" ]; then
@@ -16,7 +23,7 @@ if [ "$USE_VENV" = "true" ]; then
     source venv/bin/activate
 fi
 
-echo "Installing deps..."
+echo "Installing Python dependencies..."
 
 pip install torch==2.7.0+cu128 torchvision==0.22.0+cu128 --extra-index-url https://download.pytorch.org/whl/cu128
 pip install -U -I --no-deps xformers==0.0.30 --extra-index-url https://download.pytorch.org/whl/cu128
