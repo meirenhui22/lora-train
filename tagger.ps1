@@ -1,7 +1,7 @@
 # tagger script by @bdsqlsz
 
 # Train data path
-$train_data_dir = "./train/qinglong/train" # input images path | 图片输入路径
+$train_data_dir = "./train/test" # input images path | 图片输入路径
 $repo_id = "SmilingWolf/wd-eva02-large-tagger-v3" # model repo id from huggingface |huggingface模型repoID
 $model_dir = "wd14_tagger_model" # model dir path | 本地模型文件夹路径
 $batch_size = 12 # batch size in inference 批处理大小，越大越快
@@ -130,3 +130,4 @@ accelerate launch --num_cpu_threads_per_process=8 "./sd-scripts/finetune/tag_ima
 
 Write-Output "Tagger finished"
 Read-Host | Out-Null ;
+
