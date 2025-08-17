@@ -1,7 +1,9 @@
-# tagger script by @bdsqlsz
+# tagger script by @bdsqlsz 整合版
+# 增加了在标签文件开头添加指定字符串的功能
 
 # Train data path
-$train_data_dir = "./train/qinglong/train" # input images path | 图片输入路径
+$chufaci = "bailu," # 请修改为实际需要添加的 触发词+英文逗号
+$train_data_dir = "./train/bailu/20_bailu" # input images path | 图片输入路径
 $repo_id = "SmilingWolf/wd-eva02-large-tagger-v3" # model repo id from huggingface |huggingface模型repoID
 $model_dir = "wd14_tagger_model" # model dir path | 本地模型文件夹路径
 $batch_size = 12 # batch size in inference 批处理大小，越大越快
@@ -12,6 +14,7 @@ $character_threshold = 0.3 # character threshold | 人物姓名识别阈值
 $recursive = 1 # search for images in subfolders recursively | 递归搜索下层文件夹，1为开，0为关
 $frequency_tags = 0 # order by frequency tags | 从大到小按识别率排序标签，1为开，0为关
 $onnx = 1 #使用ONNX模型
+
 
 #Tag Edit | 标签编辑
 $remove_underscore = 1 # remove_underscore | 下划线转空格，1为开，0为关 
@@ -129,4 +132,61 @@ accelerate launch --num_cpu_threads_per_process=8 "./sd-scripts/finetune/tag_ima
   $ext_args
 
 Write-Output "Tagger finished"
-Read-Host | Out-Null ;
+
+# 新增：在所有标签文件开头添加指定字符串
+Write-Output "开始在标签文件开头添加指定内容..."
+
+# 检查目录是否存在
+if (-not (Test-Path -Path $train_data_dir -PathType Container)) {
+    Write-Error "错误: 目录 '$train_data_dir' 不存在"
+    Read-Host | Out-Null
+    exit 1
+}
+
+# 检查初始字符串是否已设置
+if ([string]::IsNullOrEmpty($chufaci)) {
+    Write-Warning "警告: 变量 `$chufaci 未定义或为空，跳过添加操作"
+    Read-Host | Out-Null
+    exit 0
+}
+
+# 获取所有TXT文件（根据recursive参数决定是否包含子目录）
+if ($recursive) {
+    $txtFiles = Get-ChildItem -Path $train_data_dir -Filter *.txt -Recurse -File
+} else {
+    $txtFiles = Get-ChildItem -Path $train_data_dir -Filter *.txt -File
+}
+
+if ($txtFiles.Count -eq 0) {
+    Write-Warning "在目录 '$train_data_dir' 中未找到任何TXT文件"
+    Read-Host | Out-Null
+    exit 0
+}
+
+# 遍历每个TXT文件并在开头添加内容
+foreach ($file in $txtFiles) {
+    try {
+        # 读取文件内容
+        $content = Get-Content -Path $file.FullName -Raw
+        
+        # 检查是否已经添加过（避免重复添加）
+        if (-not $content.StartsWith($chufaci)) {
+            # 在内容开头添加字符串
+            $newContent = $chufaci + $content
+            
+            # 写回文件
+            Set-Content -Path $file.FullName -Value $newContent -Force
+            
+            Write-Host "已处理文件: $($file.FullName)"
+        } else {
+            Write-Host "文件已包含开头内容，跳过: $($file.FullName)"
+        }
+    }
+    catch {
+        Write-Error "处理文件 '$($file.FullName)' 时出错: $_"
+    }
+}
+
+Write-Host "`n处理完成，共更新了 $($txtFiles.Count) 个文件"
+Read-Host | Out-Null
+    
