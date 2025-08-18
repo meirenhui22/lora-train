@@ -2,14 +2,39 @@
 
 #训练模式(Lora、db、sdxl_lora、Sdxl_db、sdxl_cn3l、stable_cascade_db、stable_cascade_lora、controlnet、hunyuan_lora、hunyuan_db、sd3_db、flux_lora、flux_db)
 $train_mode = "flux_lora"
-
+#常用参数前置----------------------------------------------------------------------------------------------
 # Train data path | 设置训练用模型、图片
-$pretrained_model = "./Stable-diffusion/flux/flux1-dev.safetensors" # base model path | 底模路径
-$vae = "./VAE/ae.sft"
+$pretrained_model = "./models/flux/flux1-dev.safetensors" # base model path | 底模路径
+$clip_l = "./models/flux/clip_l.safetensors"
+$t5xxl = "./models/flux/t5xxl_fp16.safetensors"
+$vae = "./modesl/flux/vae.safetensors"
+$train_data_dir = "./train/liuyifei" # train dataset path | 训练数据集路径
+$reg_data_dir = ""	# reg dataset path | 正则数据集化路径
+# Train related params | 训练相关参数
+$resolution = "512,768" # image resolution w,h. 图片分辨率，宽,高。支持非正方形，但必须是 64 倍数。
+$batch_size = 1 # batch size 一次性训练图片批处理数量，根据显卡质量对应调高。
+$max_train_epoches = 2 # max train epoches | 最大训练 epoch
+$save_every_n_epochs = 1 # save every n epochs | 每 N 个 epoch 保存一次
+$network_dim = 32 # network dim | 常用 4~128，不是越大越好
+$network_alpha = 32 # network alpha | 常用与 network_dim 相同的值或者采用较小的值，如 network_dim的一半 防止下溢。默认值为 1，使用较小的 alpha 需要提升学习率。
+# Learning rate | 学习率
+$lr = "8e-4"
+$unet_lr = "5e-4"
+$text_encoder_lr = "2e-5"
+$lr_scheduler = "cosine_with_min_lr"
+# "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup" | PyTorch自带6种动态学习率函数
+# constant，常量不变, constant_with_warmup 线性增加后保持常量不变, linear 线性增加线性减少, polynomial 线性增加后平滑衰减, cosine 余弦波曲线, cosine_with_restarts 余弦波硬重启，瞬间最大值。
+# 新增cosine_with_min_lr(适合训练lora)、warmup_stable_decay(适合训练db)、inverse_sqrt
+$lr_warmup_steps = 0 # warmup steps | 学习率预热步数，lr_scheduler 为 constant 或 adafactor 时该值需要设为0。仅在 lr_scheduler 为 constant_with_warmup 时需要填写这个值
+$lr_decay_steps = 0.2 # decay steps | 学习率衰减步数，仅在 lr_scheduler 为warmup_stable_decay时 需要填写，一般是10%总步数
+$lr_scheduler_num_cycles = 1 # restarts nums | 余弦退火重启次数，仅在 lr_scheduler 为 cosine_with_restarts 时需要填写这个值
+$lr_scheduler_timescale = 0 #times scale |时间缩放，仅在 lr_scheduler 为 inverse_sqrt 时需要填写这个值，默认同lr_warmup_steps
+$lr_scheduler_min_lr_ratio = 0.1 #min lr ratio |最小学习率比率，仅在 lr_scheduler 为 cosine_with_min_lr、、warmup_stable_decay 时需要填写这个值，默认0
+$output_name = "flux-刘亦菲-v1" # output model name | 模型保存名称
+
+#常用参数前置----------------------------------------------------------------------------------------------
 $is_v2_model = 0 # SD2.0 model | SD2.0模型 2.0模型下 clip_skip 默认无效
 $v_parameterization = 1 # parameterization | 参数化 v2 非512基础分辨率版本必须使用。
-$train_data_dir = "./train/qinglong/train" # train dataset path | 训练数据集路径
-$reg_data_dir = ""	# reg dataset path | 正则数据集化路径
 $network_weights = "" # pretrained weights for LoRA network | 若需要从已有的 LoRA 模型上继续训练，请填写 LoRA 模型路径。
 $network_multiplier = 1.0 # lora权重倍数，默认1.0
 $training_comment = "this LoRA model created from bdsqlsz by bdsqlsz'script" # training_comment | 训练介绍，可以写作者名或者使用触发关键词
@@ -26,9 +51,7 @@ $previewer_checkpoint_path = "./Stable-diffusion/train/previewer.safetensors" #�
 $adaptive_loss_weight = 1 #0关闭1开启，使用adaptive_loss_weight，官方推荐。关闭则使用P2LOSSWIGHT
 
 #SD3 训练相关参数
-$clip_l = "./clip/clip_l.safetensors"
 $clip_g = "./clip/clip_g.safetensors"
-$t5xxl = "./clip/t5xxl_fp16.safetensors"
 $t5xxl_device = "" #默认cuda，显存不够可改为CPU，但是很慢
 $t5xxl_dtype = "bf16" #目前支持fp32、fp16、bf16
 $text_encoder_batch_size = 12
@@ -38,7 +61,7 @@ $apply_t5_attn_mask = 1 # 是否应用T5的注意力掩码，默认为0
 
 #flux 相关参数
 $ae = $vae
-$timestep_sampling = "flux_shift" # 时间步采样方法，可选 sd3用"sigma"、普通DDPM用"uniform" 或 flux用"sigmoid" 或者 "shift". shift需要修改discarete_flow_shift的参数
+$timestep_sampling = "sigmoid" # 时间步采样方法，可选 sd3用"sigma"、普通DDPM用"uniform" 或 flux用"sigmoid" 或者 "shift". shift需要修改discarete_flow_shift的参数
 $sigmoid_scale = 1.0 # sigmoid 采样的缩放因子，默认为 1.0。较大的值会使采样更加均匀
 $model_prediction_type = "raw" # 模型预测类型，可选 flux的"raw"、增加噪声输入"additive" 或 sd选"sigma_scaled"
 $guidance_scale = 1.0 # guidance scale，就是CFG, 默认为 1.0
@@ -55,18 +78,10 @@ $split_mode = 0 # 是否分离模式，默认为0, 开启后只训练单块减�
 $base_weights = "" #指定合并到底模basemodel中的模型路径，多个用空格隔开。默认为空，不使用。
 $base_weights_multiplier = "1.0" #指定合并模型的权重，多个用空格隔开，默认为1.0。
 
-# Train related params | 训练相关参数
-$resolution = "768,768" # image resolution w,h. 图片分辨率，宽,高。支持非正方形，但必须是 64 倍数。
-$batch_size = 1 # batch size 一次性训练图片批处理数量，根据显卡质量对应调高。
-$max_train_epoches = 18 # max train epoches | 最大训练 epoch
-$save_every_n_epochs = 4 # save every n epochs | 每 N 个 epoch 保存一次
 
 $gradient_checkpointing = 1 #梯度检查，开启后可节约显存，但是速度变慢
 $gradient_accumulation_steps = 1 # 梯度累加数量，变相放大batchsize的倍数
 $optimizer_accumulation_steps = 0
-
-$network_dim = 2 # network dim | 常用 4~128，不是越大越好
-$network_alpha = 16 # network alpha | 常用与 network_dim 相同的值或者采用较小的值，如 network_dim的一半 防止下溢。默认值为 1，使用较小的 alpha 需要提升学习率。
 
 $train_unet_only = 1 # train U-Net only | 仅训练 U-Net，开启这个会牺牲效果大幅减少显存使用。6G显存可以开启
 $train_text_encoder_only = 0 # train Text Encoder only | 仅训练 文本编码器
@@ -103,21 +118,6 @@ $huber_schedule = "snr" #huber调度器，可选 `exponential`、`constant` 或 
 $huber_c = 0.1 #huber损失函数的c参数
 $immiscible_noise = 0 #是否开启混合噪声
 
-
-# Learning rate | 学习率
-$lr = "1e-5"
-$unet_lr = "5e-4"
-$text_encoder_lr = "2e-5"
-$lr_scheduler = "cosine_with_min_lr"
-# "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup" | PyTorch自带6种动态学习率函数
-# constant，常量不变, constant_with_warmup 线性增加后保持常量不变, linear 线性增加线性减少, polynomial 线性增加后平滑衰减, cosine 余弦波曲线, cosine_with_restarts 余弦波硬重启，瞬间最大值。
-# 新增cosine_with_min_lr(适合训练lora)、warmup_stable_decay(适合训练db)、inverse_sqrt
-$lr_warmup_steps = 0 # warmup steps | 学习率预热步数，lr_scheduler 为 constant 或 adafactor 时该值需要设为0。仅在 lr_scheduler 为 constant_with_warmup 时需要填写这个值
-$lr_decay_steps = 0.2 # decay steps | 学习率衰减步数，仅在 lr_scheduler 为warmup_stable_decay时 需要填写，一般是10%总步数
-$lr_scheduler_num_cycles = 1 # restarts nums | 余弦退火重启次数，仅在 lr_scheduler 为 cosine_with_restarts 时需要填写这个值
-$lr_scheduler_timescale = 0 #times scale |时间缩放，仅在 lr_scheduler 为 inverse_sqrt 时需要填写这个值，默认同lr_warmup_steps
-$lr_scheduler_min_lr_ratio = 0.1 #min lr ratio |最小学习率比率，仅在 lr_scheduler 为 cosine_with_min_lr、、warmup_stable_decay 时需要填写这个值，默认0
-
 #optimizer | 优化器
 $optimizer_type = "adaFactor"
 # 可选优化器"adaFactor","AdamW","AdamW8bit","Lion","SGDNesterov","SGDNesterov8bit","DAdaptation",  
@@ -149,7 +149,6 @@ $caption_suffix = "" #打标后缀，可以加入相机镜头如果需要，例�
 $alpha_mask = 0 #是否使用透明蒙版检测
 
 # Output settings | 输出设置
-$output_name = "flux-test-lokr16G" # output model name | 模型保存名称
 $save_model_as = "safetensors" # model save ext | 模型保存格式 ckpt, pt, safetensors
 $mixed_precision = "bf16" # 默认fp16,no,bf16可选
 $save_precision = "bf16" # 默认fp16,fp32,bf16可选
@@ -169,9 +168,9 @@ $config_file = "./toml/" + $output_name + ".toml" #输出文件保存目录和�
 
 #输出采样图片
 $enable_sample = 1 #1开启出图，0禁用
-$sample_at_first = 0 #是否在训练开始时就出图
+$sample_at_first = 1 #是否在训练开始时就出图
 $sample_every_n_epochs = 1 #每n个epoch出一次图
-$sample_prompts = "./toml/qinglong.txt" #prompt文件路径
+$sample_prompts = "./setting/flux-prompts.txt" #prompt文件路径
 $sample_sampler = "euler_a" #采样器 'ddim', 'pndm', 'heun', 'dpmsolver', 'dpmsolver++', 'dpmsingle', 'k_lms', 'k_euler', 'k_euler_a', 'k_dpm_2', 'k_dpm_2_a'
 
 #wandb 日志同步
@@ -1265,4 +1264,5 @@ python -m accelerate.commands.launch --num_cpu_threads_per_process=8 $launch_arg
   $ext_args
 
 Write-Output "Train finished"
+
 Read-Host | Out-Null ;
