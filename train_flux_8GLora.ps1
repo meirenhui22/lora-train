@@ -8,20 +8,20 @@ $pretrained_model = "./models/flux/flux1-dev.safetensors" # base model path | �
 $vae = "./models/flux/ae.safetensors"
 $train_data_dir = "./train/liuyifei" # train dataset path | 训练数据集路径
 $reg_data_dir = ""	# reg dataset path | 正则数据集化路径
-$training_comment = "this LoRA model created from xxx" # training_comment | 训练介绍，可以写作者名或者使用触发关键词
+$training_comment = "creat a lora by flux named liuyifei" # training_comment | 训练介绍，可以写作者名或者使用触发关键词
 $clip_l = "./models/flux/clip_l.safetensors"
 $t5xxl = "./models/flux/t5xxl_fp16.safetensors"
 $resolution = "512,512" # image resolution w,h. 图片分辨率，宽,高。支持非正方形，但必须是 64 倍数。
 $batch_size = 1 # batch size 一次性训练图片批处理数量，根据显卡质量对应调高。
-$max_train_epoches = 10 # max train epoches | 最大训练 epoch
+$max_train_epoches = 2 # max train epoches | 最大训练 epoch
 $save_every_n_epochs = 1 # save every n epochs | 每 N 个 epoch 保存一次
 $network_dim = 32 # network dim | 常用 4~128，不是越大越好
 $network_alpha = 32 # network alpha | 常用与 network_dim 相同的值或者采用较小的值，如 network_dim的一半 防止下溢。默认值为 1，使用较小的 alpha 需要提升学习率。
 # Learning rate | 学习率
-$lr = "1e-5" #主要修改这个总学习率即可
+$lr = "8e-4" #主要修改这个总学习率即可
 $unet_lr = "5e-4"
 $text_encoder_lr = "2e-5"
-$output_name = "flux-liuyifei-v1" # output model name | 模型保存名称
+$output_name = "flux-刘亦菲-v1" # output model name | 模型保存名称
 
 #常用参数前置end-------------------------------------------------------------------
 
@@ -1275,4 +1275,5 @@ python -m accelerate.commands.launch --num_cpu_threads_per_process=8 $launch_arg
   $ext_args
 
 Write-Output "Train finished"
+
 Read-Host | Out-Null ;
